@@ -65,49 +65,34 @@ public class ClusterResource {
 						)
 				.orElseThrow(() -> new WebApplicationException(Response.Status.NOT_FOUND));
 	}
+	@GET
+	@Path("/attivi")
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<ClusterInfo> getClusterActiveAllAccount() {
 
-	@PUT
-	@Path("/{account}")
-	@Consumes(MediaType.APPLICATION_JSON)
-	public void updateContact(@PathParam("account") String id, ClusterInfo c) {
-
-		dbService
-		.findCluster(id)
-		//[rg] Bisogna mettere <qualificatore> altrimenti Eclipse ha un baco 
-		//     https://bugs.eclipse.org/bugs/show_bug.cgi?id=540846
-		.<Cluster>flatMap(
-				ce -> {
-					ce.setCustomerNo( c.getCustomerNo() );
-					ce.setCentro( c.getCentro() );
-					ce.setTechDescr( c.getTechDescr() );
-
-					dbService.updateCluster(ce);
-
-					return Optional.of(ce);
-				}
-				)
-		.orElseThrow(() -> new WebApplicationException(Response.Status.NOT_FOUND));
+		List<ClusterInfo> list_of_clust = dbService
+				.getAllClusterActive().stream().
+				map( ce ->
+				new ClusterInfo(ce.getCustomerNo(), ce.getCustomerClass(),ce.getTechDescr(),ce.getCentro(), ce.getStatus(), ce.getCustomerActivationDate() )
+						).collect(Collectors.toList());
+		if (list_of_clust == null )
+			 throw new WebApplicationException(Response.Status.NOT_FOUND);
+		return list_of_clust;
 	}
 
-	@DELETE
-	@Path("/{account}")
-	public void deleteContact(@PathParam("account") String id) { dbService.deleteCluster(id); }
-
-	
-	//[rg] Nota @Valid che invocherà la validazione dei dati
-	@POST
+	@GET
+	@Path("/attivi/{account}")
 	@Produces(MediaType.APPLICATION_JSON)
-	@Consumes(MediaType.APPLICATION_JSON)
-	public ClusterInfo addCluster(@Valid ClusterInfo c) {
+	public List<ClusterInfo> getClusterActiveAccount(@PathParam("account") String account) {
 
-		Cluster ce = new Cluster();
-		ce.setCustomerNo( c.getCustomerNo() );
-		ce.setCentro( c.getCentro() );
-		ce.setTechDescr( c.getTechDescr() );
-
-		Cluster fromDB = dbService.addCluster(ce);
-
-		return new ClusterInfo(fromDB.getCustomerNo(), fromDB.getCustomerClass(),fromDB.getTechDescr(),fromDB.getCentro(), fromDB.getStatus(), fromDB.getCustomerActivationDate());
+		List<ClusterInfo> list_of_clust = dbService
+				.findClusterAccountAttivi(account).stream().
+				map( ce ->
+				new ClusterInfo(ce.getCustomerNo(), ce.getCustomerClass(),ce.getTechDescr(),ce.getCentro(), ce.getStatus(), ce.getCustomerActivationDate() )
+						).collect(Collectors.toList());
+		if (list_of_clust == null )
+			 throw new WebApplicationException(Response.Status.NOT_FOUND);
+		return list_of_clust;
 	}
 
 }
